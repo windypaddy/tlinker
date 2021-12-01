@@ -1,4 +1,5 @@
 # TLinker
+English | [简体中文](./README.zh.md)
 
 TLinker is a BitTorrent tool currently with three functions:
 - **AutoLink**: Find files described in a torrent file from source location, then create links in the destination location.
