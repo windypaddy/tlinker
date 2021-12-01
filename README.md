@@ -149,4 +149,4 @@ A file may be included in multiple pieces, if all of these pieces are verified, 
 Feel free to submit issues and feature requests.
 
 ## License
-This project is distributed under the Apache-2.0 License. See `LICENSE.md` for the full license text.
+This project is distributed under the Apache-2.0 License. See `LICENSE` for the full license text.
