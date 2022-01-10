@@ -4,6 +4,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.*;
+import java.sql.SQLException;
 import java.util.*;
 
 
@@ -44,17 +45,38 @@ public class Main {
                     }
                     break;
                 case "link":
-                    {
-                        Link link = new Link(new LinkParameters(parametersRaw), io);
-                        link.start();
-                    }
+                {
+                    Link link = new Link(new LinkParameters(parametersRaw), io);
+                    link.start();
                     break;
+                }
                 case "tree":
-                    {
-                        Tree tree = new Tree(new TreeParameters(parametersRaw), io);
-                        tree.start();
+                {
+                    Tree tree = new Tree(new TreeParameters(parametersRaw), io);
+                    tree.start();
+                    break;
+                }
+                case "update":
+                {
+                    Update update = new Update(new UpdateParameters(parametersRaw), io);
+                    update.start();
+                    break;
+                }
+                case "import":
+                    try {
+                        Import import_ = new Import(new ImportParameters(parametersRaw), io);
+                        import_.start();
+                    } catch (TorrentPieceDataException e) {
+                        io.pieceLengthError(e);
+                        System.exit(-5);
                     }
                     break;
+                case "export":
+                {
+                    Export export = new Export(new ExportParameters(parametersRaw), io);
+                    export.start();
+                    break;
+                }
                 default:
                     io.commandUsage();
                     System.exit(-3);
@@ -68,6 +90,9 @@ public class Main {
         } catch (FileException e) {
             io.fileException(e);
             System.exit(-7);
+        } catch (SQLException | DatabaseException e) {
+            e.printStackTrace();
+            System.exit(-1);
         }
     }
 

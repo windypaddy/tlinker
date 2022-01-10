@@ -24,7 +24,7 @@ public class AutoLink {
     public AutoLink (AutoLinkParameters parameters_, IO io_) throws TorrentPieceDataException, IOException {
         parameters = parameters_;
         io = io_;
-        if (parameters.quiet) {
+        if (!parameters.quiet) {
             io.modeAutoLink();
             io.path("torrent_file", parameters.torrent, false);
             io.path("source_path", parameters.source, false);
@@ -54,6 +54,10 @@ public class AutoLink {
                 printFailedLinks(failedLinks);
             }
         }
+    }
+
+    public Torrent getTorrent () {
+        return torrent;
     }
 
     private void generateCombination () {

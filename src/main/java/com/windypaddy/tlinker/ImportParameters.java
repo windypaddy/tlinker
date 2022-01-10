@@ -5,15 +5,12 @@ import org.apache.commons.cli.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class AutoLinkParameters {
+public class ImportParameters {
     public final Path torrent;
     public final Path source;
-    public final Path destination;
-    public final boolean hardLink;
-    public final boolean export;
     public final boolean quiet;
 
-    public AutoLinkParameters (String[] parametersRaw) throws ParseException, FileException {
+    public ImportParameters (String[] parametersRaw) throws ParseException, FileException {
         Options options = new Options();
         options.addOption(Option.builder("t")
                 .argName("torrent")
@@ -29,15 +26,6 @@ public class AutoLinkParameters {
                 .type(String.class)
                 .desc("Path to source.")
                 .build());
-        options.addOption(Option.builder("d")
-                .argName("destination")
-                .hasArg()
-                .required()
-                .type(String.class)
-                .desc("Path to destination.")
-                .build());
-        options.addOption("h", "Use hard link.");
-        options.addOption("e", "Export link commands instead of actually linking.");
         options.addOption("q", "Quiet mode, only output errors.");
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd;
@@ -46,7 +34,7 @@ public class AutoLinkParameters {
         } catch (ParseException e) {
             System.err.println("Error: " + e.getMessage());
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("tlinker autolink -t <torrent> -s <source> -d <destination> [-h] [-e] [-q]",
+            formatter.printHelp("tlinker import -t <torrent> -s <source> [-q]",
                     options);
             throw e;
         }
@@ -69,26 +57,6 @@ public class AutoLinkParameters {
             }
             Utils.testDirectoryReadable(source);
         }
-        {
-            Path destinationPath = Paths.get(cmd.getOptionValue("d"));
-            if (destinationPath.isAbsolute()) {
-                this.destination = destinationPath;
-            } else {
-                this.destination = Paths.get(System.getProperty("user.dir")).resolve(destinationPath);
-            }
-            Utils.testDirectoryReadWrite(destination);
-        }
-        this.hardLink = cmd.hasOption("h");
-        this.export = cmd.hasOption("e");
         this.quiet = cmd.hasOption("q");
-    }
-
-    public AutoLinkParameters (Path torrent, Path source, Path destination, boolean hardLink, boolean export, boolean quiet) {
-        this.torrent = torrent;
-        this.source = source;
-        this.destination = destination;
-        this.hardLink = hardLink;
-        this.export = export;
-        this.quiet = quiet;
     }
 }

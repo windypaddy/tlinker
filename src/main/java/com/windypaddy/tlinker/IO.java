@@ -28,7 +28,11 @@ public class IO {
             Map.entry("file_exist", new String[]{"Target already existed: "}),
             Map.entry("file_not_exist", new String[]{"Target not exist: "}),
             Map.entry("file_not_readable", new String[]{"Target not readable: "}),
-            Map.entry("file_not_writable", new String[]{"Target not writable: "})
+            Map.entry("file_not_writable", new String[]{"Target not writable: "}),
+            Map.entry("repo_update", new String[]{"Main repository updated:", "Extra repository updated:"}),
+            Map.entry("repo_file_update", new String[]{"+", "M", "-"}),
+            Map.entry("import_advice", new String[]{"Import advices:", "F Failed to import", "+ Can be moved to extra repository", "- Can be deleted from source folder"}),
+            Map.entry("import_file_advice", new String[]{"F", "+", "-"})
     );
 
     public IO() {
@@ -39,7 +43,7 @@ public class IO {
     }
 
     public void exception (Exception e) {
-        System.err.println(e.getMessage());
+        e.printStackTrace();
     }
 
     public void commandUsage () {
@@ -48,6 +52,10 @@ public class IO {
 
     public void modeAutoLink () {
         System.out.println(messages.get("auto_link_mode")[0]);
+    }
+
+    public void repoUpdate (boolean main) {
+        System.out.println(messages.get("repo_update")[main?0:1]);
     }
 
     public void path (String message, Path path, boolean error) {
@@ -72,6 +80,18 @@ public class IO {
             System.err.println(path);
         } else {
             System.out.println(path);
+        }
+    }
+
+    public void pathUpdate (int type, Path path) {
+        System.out.println(messages.get("repo_file_update")[type] + " " + path);
+    }
+
+    public void pathAdvice (int type, Path path) {
+        if (type == 0) {
+            System.err.println(messages.get("import_file_advice")[type] + " " + path);
+        } else {
+            System.out.println(messages.get("import_file_advice")[type] + " " + path);
         }
     }
 
@@ -111,7 +131,7 @@ public class IO {
     }
 
     public void chooseListRange (int listSize) {
-        System.out.print(messages.get("list_range")[0] + listSize + messages.get("list_range")[1]);
+        System.out.println(messages.get("list_range")[0] + listSize + messages.get("list_range")[1]);
     }
 
     public void failedDirectories () {
@@ -124,6 +144,13 @@ public class IO {
 
     public void failedLinks () {
         System.err.println(messages.get("failed_links")[0]);
+    }
+
+    public void importAdvices () {
+        System.out.println(messages.get("import_advice")[0]);
+        System.out.println(messages.get("import_advice")[1]);
+        System.out.println(messages.get("import_advice")[2]);
+        System.out.println(messages.get("import_advice")[3]);
     }
 
     public void fileException (FileException e) {

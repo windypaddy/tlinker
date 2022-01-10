@@ -1,8 +1,11 @@
 package com.windypaddy.tlinker;
 
 import com.dampcake.bencode.BencodeInputStream;
+import com.dampcake.bencode.BencodeOutputStream;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -17,6 +20,7 @@ public class Torrent {
     public final ArrayList<Piece> pieces;
     public final ArrayList<TorrentFile> files;
     public final long size;
+    public final String torrentHash;
 
     public Torrent (Path torrentFilePath, Path sourceRoot) throws TorrentPieceDataException, IOException {
         content = readContent(torrentFilePath);
@@ -41,11 +45,13 @@ public class Torrent {
         }
 
         files = new ArrayList<>();
+        ArrayList<ArrayList<String>> filesPaths = new ArrayList<>();
         ArrayList<FileInfo> sourceFiles = findSourceFiles(sourceRoot);
         ArrayList<Map> torrentFilesRaw = (ArrayList<Map>) ((Map)content.get("info")).get("files");
         long position = 0;
         for (Map torrentFileRaw : torrentFilesRaw) {
             ArrayList<String> pathString = (ArrayList<String>)torrentFileRaw.get("path");
+            filesPaths.add(pathString);
             Path path = Path.of(pathString.get(0));
             for (int i=1; i<pathString.size(); i++) {
                 path = path.resolve(pathString.get(i));
@@ -71,14 +77,27 @@ public class Torrent {
             }
             position += size;
         }
+        torrentHash = torrentHash(filesPaths, piecesData.array());
     }
 
-    public Torrent (Path torrentFilePath) throws IOException {
+    public Torrent (Path torrentFilePath, boolean calculatePieceHash) throws IOException {
         content = readContent(torrentFilePath);
 
         pieceLength = -1;
         size = -1;
         pieces = null;
+
+        if (calculatePieceHash) {
+            ByteBuffer piecesData = (ByteBuffer) ((Map)content.get("info")).get("pieces");
+            ArrayList<ArrayList<String>> filesPaths = new ArrayList<>();
+            ArrayList<Map> torrentFilesRaw = (ArrayList<Map>) ((Map)content.get("info")).get("files");
+            for (Map torrentFileRaw : torrentFilesRaw) {
+                filesPaths.add((ArrayList<String>)torrentFileRaw.get("path"));
+            }
+            torrentHash = torrentHash(filesPaths, piecesData.array());
+        } else {
+            torrentHash = null;
+        }
 
         files = new ArrayList<>();
         ArrayList<Map> torrentFilesRaw = (ArrayList<Map>) ((Map)content.get("info")).get("files");
@@ -145,5 +164,16 @@ public class Torrent {
             ((Map<String, Object>)content.get("info")).put("pieces", ((Map)contentRaw.get("info")).get("pieces"));
         }
         return content;
+    }
+
+    private static String torrentHash (ArrayList<ArrayList<String>> files, byte[] pieces) throws IOException {
+        byte[] byteArray;
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             BencodeOutputStream bencodeOutputStream = new BencodeOutputStream(byteArrayOutputStream, StandardCharsets.UTF_8)) {
+            bencodeOutputStream.writeList(files);
+            byteArrayOutputStream.write(pieces);
+            byteArray = byteArrayOutputStream.toByteArray();
+        }
+        return DigestUtils.md5Hex(byteArray);
     }
 }

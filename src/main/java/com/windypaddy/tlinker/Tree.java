@@ -16,7 +16,7 @@ public class Tree {
         parameters = parameters_;
         io = io_;
 
-        torrent = new Torrent(parameters.torrent);
+        torrent = new Torrent(parameters.torrent, false);
 
         directories = new HashSet<>();
         for (TorrentFile torrentFile : torrent.files) {

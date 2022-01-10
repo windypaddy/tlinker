@@ -1,9 +1,6 @@
 package com.windypaddy.tlinker;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -127,6 +124,12 @@ public abstract class Utils {
             }
         } catch (Exception e) {
             throw new FileException(FileException.Type.NOT_WRITEABLE, path);
+        }
+    }
+
+    public static String getFileMd5 (Path path) throws IOException {
+        try (InputStream is = Files.newInputStream(path)) {
+            return org.apache.commons.codec.digest.DigestUtils.md5Hex(is);
         }
     }
 
