@@ -33,7 +33,7 @@ public class Database implements Closeable {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS config(id SMALLINT PRIMARY KEY, mainrepo CHAR(4096), extrepo CHAR(4096))");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS mainrepo(path CHAR(4096) PRIMARY KEY, hash CHAR(32) NOT NULL, size BIGINT, mtime BIGINT)");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS extrepo(path CHAR(4096) PRIMARY KEY, hash CHAR(32) NOT NULL, size BIGINT, mtime BIGINT)");
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS torrents(thash CHAR(32) NOT NULL, path CHAR(4096) NOT NULL, hash CHAR(32), UNIQUE (thash, path))");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS torrents(thash CHAR(32) NOT NULL, id INTEGER NOT NULL, hash CHAR(32), UNIQUE (thash, id))");
             try (ResultSet resultSet = statement.executeQuery("SELECT * FROM config WHERE id = 0")) {
                 if (!resultSet.next()) {
                     try (Statement statement1 = connection.createStatement()) {
@@ -165,46 +165,60 @@ public class Database implements Closeable {
         return removedPaths;
     }
 
-    public void addTorrentFile (String pieceHash, Path path, String hash) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO torrents(thash, path, hash) VALUES (?, ?, ?)")) {
-            statement.setString(1, pieceHash);
-            statement.setString(2, path.toString());
-            statement.setString(3, hash);
-            statement.executeUpdate();
-        } catch (SQLIntegrityConstraintViolationException ignored) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE torrents SET hash = ? WHERE thash = ? AND path = ?")) {
-                statement.setString(2, pieceHash);
-                statement.setString(3, path.toString());
-                statement.setString(1, hash);
-                statement.executeUpdate();
+    public boolean addTorrentFile (String torrentHash, int id, String hash) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT hash FROM torrents WHERE thash = ? AND id = ?")) {
+            statement.setString(1, torrentHash);
+            statement.setInt(2, id);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    if (resultSet.getString("hash") == null) {
+                        try (PreparedStatement statement1 = connection.prepareStatement("UPDATE torrents SET hash = ? WHERE thash = ? AND id = ?")) {
+                            statement1.setString(2, torrentHash);
+                            statement1.setInt(3, id);
+                            statement1.setString(1, hash);
+                            statement1.executeUpdate();
+                        }
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    try (PreparedStatement statement1 = connection.prepareStatement("INSERT INTO torrents(thash, id, hash) VALUES (?, ?, ?)")) {
+                        statement1.setString(1, torrentHash);
+                        statement1.setInt(2, id);
+                        statement1.setString(3, hash);
+                        statement1.executeUpdate();
+                    }
+                    return true;
+                }
             }
         }
     }
 
-    public List<Path> findRepo (String pieceHash, Path path) throws SQLException {
+    public List<Path> findRepo (String torrentHash, int id) throws SQLException {
         ArrayList<Path> paths = new ArrayList<>();
-        paths.addAll(findMainRepo(pieceHash, path));
-        paths.addAll(findExtRepo(pieceHash, path));
+        paths.addAll(findMainRepo(torrentHash, id));
+        paths.addAll(findExtRepo(torrentHash, id));
         return paths;
     }
 
-    public List<Path> findMainRepo (String pieceHash, Path path) throws SQLException {
-        return findFile(mainRepo, "mainrepo", pieceHash, path);
+    public List<Path> findMainRepo (String torrentHash, int id) throws SQLException {
+        return findFile(mainRepo, "mainrepo", torrentHash, id);
     }
 
-    public List<Path> findExtRepo (String pieceHash, Path path) throws SQLException {
-        return findFile(extRepo, "extrepo", pieceHash, path);
+    public List<Path> findExtRepo (String torrentHash, int id) throws SQLException {
+        return findFile(extRepo, "extrepo", torrentHash, id);
     }
 
-    private List<Path> findFile (Path root, String repo, String pieceHash, Path path) throws SQLException {
+    private List<Path> findFile (Path root, String repo, String pieceHash, int id) throws SQLException {
         ArrayList<Path> paths = new ArrayList<>();
-        try (PreparedStatement statement = connection.prepareStatement("SELECT " + repo + ".path" + " AS rpath " +
-                "FROM torrents INNER JOIN " + repo + " USING (hash) WHERE thash = ? AND torrents.path = ?")) {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT path " +
+                "FROM torrents INNER JOIN " + repo + " USING (hash) WHERE thash = ? AND id = ?")) {
             statement.setString(1, pieceHash);
-            statement.setString(2, path.toString());
+            statement.setInt(2, id);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    paths.add(root.resolve(Path.of(resultSet.getString("rpath"))));
+                    paths.add(root.resolve(Path.of(resultSet.getString("path"))));
                 }
             }
         }

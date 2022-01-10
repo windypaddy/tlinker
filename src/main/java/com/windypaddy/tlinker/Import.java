@@ -26,18 +26,24 @@ public class Import {
         ArrayList<Path> failedFiles = new ArrayList<>();
         ArrayList<Path> deletableFiles = new ArrayList<>();
         ArrayList<Path> movableFiles = new ArrayList<>();
+        ArrayList<Path> existedFiles = new ArrayList<>();
 
         try (Database database = new Database(null)) {
             database.check();
 
             for (TorrentFile torrentFile : torrent.files) {
+                int id = torrent.files.indexOf(torrentFile);
                 if (torrentFile.matchedFile == null) {
-                    database.addTorrentFile(torrent.torrentHash, torrentFile.file.path, null);
+                    if (!database.addTorrentFile(torrent.torrentHash, id, null)) {
+                        existedFiles.add(torrentFile.file.path);
+                    }
                     failedFiles.add(torrentFile.file.path);
                 } else {
-                    database.addTorrentFile(torrent.torrentHash, torrentFile.file.path,
-                            Utils.getFileMd5(parameters.source.resolve(torrentFile.matchedFile.file.path)));
-                    if (database.findRepo(torrent.torrentHash, torrentFile.file.path).isEmpty()) {
+                    if (!database.addTorrentFile(torrent.torrentHash, id,
+                            Utils.getFileMd5(parameters.source.resolve(torrentFile.matchedFile.file.path)))) {
+                        existedFiles.add(torrentFile.file.path);
+                    }
+                    if (database.findRepo(torrent.torrentHash, id).isEmpty()) {
                         movableFiles.add(torrentFile.matchedFile.file.path);
                     } else {
                         deletableFiles.add(torrentFile.matchedFile.file.path);
@@ -47,6 +53,7 @@ public class Import {
         }
 
         io.importAdvices();
+        for (Path path : existedFiles) io.pathAdvice(3, path);
         for (Path path : failedFiles) io.pathAdvice(0, path);
         for (Path path : deletableFiles) io.pathAdvice(2, path);
         for (Path path : movableFiles) io.pathUpdate(1, path);

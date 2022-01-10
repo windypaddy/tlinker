@@ -31,8 +31,8 @@ public class IO {
             Map.entry("file_not_writable", new String[]{"Target not writable: "}),
             Map.entry("repo_update", new String[]{"Main repository updated:", "Extra repository updated:"}),
             Map.entry("repo_file_update", new String[]{"+", "M", "-"}),
-            Map.entry("import_advice", new String[]{"Import advices:", "F Failed to import", "+ Can be moved to extra repository", "- Can be deleted from source folder"}),
-            Map.entry("import_file_advice", new String[]{"F", "+", "-"})
+            Map.entry("import_advice", new String[]{"Import advices:", "F Failed to import", "+ Can be moved to extra repository", "- Can be deleted from source folder", "E Already existed in the database"}),
+            Map.entry("import_file_advice", new String[]{"F", "+", "-", "E"})
     );
 
     public IO() {
@@ -151,6 +151,8 @@ public class IO {
         System.out.println(messages.get("import_advice")[1]);
         System.out.println(messages.get("import_advice")[2]);
         System.out.println(messages.get("import_advice")[3]);
+        System.out.println(messages.get("import_advice")[4]);
+        System.out.println();
     }
 
     public void fileException (FileException e) {

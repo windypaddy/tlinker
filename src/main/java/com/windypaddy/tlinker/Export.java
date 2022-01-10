@@ -27,7 +27,7 @@ public class Export {
         try (Database database = new Database(null)) {
             database.check();
             for (TorrentFile torrentFile : torrent.files) {
-                List<Path> paths = database.findRepo(torrent.torrentHash, torrentFile.file.path);
+                List<Path> paths = database.findRepo(torrent.torrentHash, torrent.files.indexOf(torrentFile));
                 if (!paths.isEmpty()) {
                     Files.createSymbolicLink(parameters.destination.resolve(torrentFile.file.path), paths.get(0));
                 } else {
